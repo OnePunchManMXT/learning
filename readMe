@@ -1,1 +1,38 @@
-This is a  test repository!!
+这个是在进行flume开发过程中的一些记录，包括自定义拦截器和选择器，以及根据资料修复spoolDirectorySource在处理变化的文件导致错误的bug。
+
+MXTFlagInterceptor 在event的head中添加标识，用于在后端进行数据安全验证。
+
+RandomSelector 是一个测试自定义选择器，进行随机选择channel分发消息。
+
+MxtSpoolDirectorySource 在SpoolDirectorySource的基础上，修改部分源码，实现能够处理变化的文件。
+
+
+    private void checkFileCpIsOver(File file) {
+        long modified = file.lastModified();//目前文件的修改时间
+        long length = file.length();//目前文件的大小
+
+        File currentFile = new File(file.getAbsolutePath());
+        int count = 0;//记录循环次数，超过waitCount次，也就是0.5 * waitCount秒后抛出异常
+        while(currentFile.lastModified() != modified || currentFile.length() != length  ) {
+            if(count > waitCount) {
+                String message = "File Copy time too long. please check copy whether exception!" + "\n"
+                        + "File at :" + file.getAbsolutePath() + "\n"
+                        + "File current length is：" + currentFile.lastModified();
+                logger.error(message);
+
+//                new IllegalStateException(message);
+            }
+            logger.error("this is time  record: "+ currentFile.lastModified() +" file :"+modified +" count :"+count);
+            count++;
+            modified = currentFile.lastModified();
+            length = currentFile.length();
+            try {
+                Thread.sleep(500);//等待500毫秒
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            currentFile = new File(file.getAbsolutePath());
+
+        }
+    }
